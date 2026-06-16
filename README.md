@@ -1,26 +1,85 @@
 # Pi Personal Tools
 
-Personal Pi package containing:
+A personal Pi package with three extensions and one helper CLI.
 
-- `last-ai`: `/last-ai [n]` opens recent assistant messages in an external editor and inserts the reply section back into Pi.
-- `image-tool`: `generate_image` calls an OpenAI-compatible image API and saves generated images locally.
-- `ssh-copy`: `Alt+V` image paste over SSH using `pi-image-bridge` and SSH `RemoteForward`.
+## Extensions
 
-## Install locally
+### last-ai
+
+```txt
+/last-ai [n]
+```
+
+Opens the last `n` assistant messages in an external editor. Text below `----` is inserted back into the Pi editor.
+
+### image-tool
+
+Registers the `generate_image` tool. It calls an OpenAI-compatible image API.
+
+Settings:
+
+```json
+{
+  "personalPiTools": {
+    "imageTool": {
+      "baseUrl": "https://api.openai.com/v1",
+      "apiKeyEnv": "OPENAI_API_KEY",
+      "model": "gpt-image-1",
+      "outputDir": ".pi/generated-images",
+      "size": "1024x1024"
+    }
+  }
+}
+```
+
+Environment overrides:
+
+```bash
+PI_IMAGE_API_BASE_URL=https://api.openai.com/v1
+PI_IMAGE_API_KEY=sk-...
+PI_IMAGE_MODEL=gpt-image-1
+PI_IMAGE_OUTPUT_DIR=.pi/generated-images
+```
+
+### ssh-copy
+
+Registers:
+
+```txt
+Alt+V
+/paste-image
+ssh_copy_image
+```
+
+In SSH sessions, `Alt+V` fetches the local clipboard image through `pi-image-bridge`, saves it on the remote machine, and inserts the remote path into the Pi editor.
+
+Linux and Windows are the v1 clipboard targets. macOS autostart/status can be installed, but macOS clipboard extraction has no `pngpaste`, Swift, or AppleScript fallback in v1; it only works if the optional native clipboard dependency can read images.
+
+Settings:
+
+```json
+{
+  "personalPiTools": {
+    "sshCopy": {
+      "enabled": true,
+      "bridgeUrl": "http://127.0.0.1:38991",
+      "remoteImageDir": ".pi/pasted-images",
+      "shortcut": "alt+v",
+      "insertMode": "path"
+    }
+  }
+}
+```
+
+## One-time local bridge setup
 
 ```bash
 npm install
-pi install ./ --approve
-```
-
-## One-time image bridge setup
-
-```bash
 npm run bridge:install
 npm run bridge:doctor
 ```
 
-`pi-image-bridge install` is zero-argument by default. It installs local autostart and writes a managed SSH config block for no-touch use:
+The installer configures local autostart and adds a managed SSH config block for zero-argument, no-touch usage:
 
 ```sshconfig
 # >>> pi-image-bridge
@@ -30,6 +89,18 @@ Host *
 # <<< pi-image-bridge
 ```
 
-After setup, start Pi normally. In SSH sessions, press `Alt+V` to paste a local clipboard image into the remote Pi editor.
+The managed block is idempotent. Re-running install updates the block instead of duplicating it. `pi-image-bridge uninstall` removes only the lines between the matching markers and leaves your other SSH config untouched.
 
-macOS clipboard paste has no `pngpaste`, Swift, or AppleScript fallback in v1. It only works if the optional native clipboard dependency can read images on the machine.
+`ProxyJump` and `ssh -J` work because the remote forward is carried inside the SSH connection. Manual nested SSH requires the second SSH hop to forward the bridge again, or replacing the nested hop with `ProxyJump`.
+
+## Pi package install
+
+```bash
+pi install ./ --approve
+```
+
+For quick testing:
+
+```bash
+pi -e ./ --approve
+```

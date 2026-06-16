@@ -2,8 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
-    "outDir": "dist",
-    "rootDir": "packages",
+    "outDir": "dist/pi-image-bridge",
+    "rootDir": "packages/pi-image-bridge/src",
     "declaration": false,
     "sourceMap": false
   },
