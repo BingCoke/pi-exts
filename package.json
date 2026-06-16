@@ -1,0 +1,45 @@
+{
+  "name": "pi-personal-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Personal Pi extensions, skills, and helper tools.",
+  "keywords": ["pi-package", "pi", "pi-extension"],
+  "workspaces": ["packages/*"],
+  "bin": {
+    "pi-image-bridge": "./dist/pi-image-bridge/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bridge:serve": "npm run build -- --pretty false && node dist/pi-image-bridge/cli.js serve",
+    "bridge:install": "npm run build -- --pretty false && node dist/pi-image-bridge/cli.js install",
+    "bridge:doctor": "npm run build -- --pretty false && node dist/pi-image-bridge/cli.js doctor",
+    "prepack": "npm run build"
+  },
+  "pi": {
+    "extensions": [
+      "./packages/last-ai/src/index.ts",
+      "./packages/image-tool/src/index.ts",
+      "./packages/ssh-copy/src/index.ts"
+    ],
+    "skills": ["./skills"]
+  },
+  "optionalDependencies": {
+    "@mariozechner/clipboard": "^0.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@earendil-works/pi-coding-agent": "*",
+    "tsx": "^4.20.0",
+    "typebox": "*",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
+  }
+}

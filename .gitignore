@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+.pi/generated-images/
+.pi/pasted-images/
+*.log
+.DS_Store
