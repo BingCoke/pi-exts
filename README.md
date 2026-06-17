@@ -1,6 +1,6 @@
 # Pi Personal Tools
 
-A personal Pi package with three extensions and one helper CLI.
+A personal Pi package with four extensions and one helper CLI.
 
 ## Extensions
 
@@ -70,6 +70,28 @@ Settings:
   }
 }
 ```
+
+### processor
+
+Registers background-process tools and `/processor`:
+
+```txt
+processor_start
+processor_list
+processor_output
+processor_stop
+/processor list
+/processor output <id-or-name>
+/processor stop <id-or-name>
+```
+
+Use it for Claude Code-style background tasks, for example starting a web server without blocking the agent turn:
+
+```txt
+processor_start({ "name": "web", "command": "npm run dev" })
+```
+
+Processes are kept for the current Pi session and stopped on session shutdown.
 
 ## One-time local bridge setup
 

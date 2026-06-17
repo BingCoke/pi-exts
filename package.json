@@ -23,7 +23,8 @@
     "extensions": [
       "./packages/last-ai/src/index.ts",
       "./packages/image-tool/src/index.ts",
-      "./packages/ssh-copy/src/index.ts"
+      "./packages/ssh-copy/src/index.ts",
+      "./packages/processor/src/index.ts"
     ],
     "skills": ["./skills"]
   },
