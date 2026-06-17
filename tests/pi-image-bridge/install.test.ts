@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildSshConfigBlock, extractManagedHosts, mergeManagedHosts, removeManagedSshConfigBlock } from "../../packages/pi-image-bridge/src/install.js";
+import {
+  buildSshConfigBlock,
+  extractManagedHosts,
+  hostMergeBroadensScope,
+  mergeManagedHosts,
+  removeManagedSshConfigBlock,
+  verifyManagedSshConfig,
+} from "../../packages/pi-image-bridge/src/install.js";
 
 describe("bridge installer", () => {
   it("builds default Host * ssh config block", () => {
@@ -17,6 +24,11 @@ describe("bridge installer", () => {
     expect(mergeManagedHosts(["*"], ["b"])).toEqual(["*"]);
   });
 
+  it("detects when adding Host star broadens an existing restricted config", () => {
+    expect(hostMergeBroadensScope(["prod"], ["*"])).toBe(true);
+    expect(hostMergeBroadensScope(["*"], ["prod"])).toBe(false);
+  });
+
   it("extracts managed hosts from an existing block", () => {
     const input = "Host a\n  User root\n# >>> pi-image-bridge\nHost a b\n  RemoteForward 1 127.0.0.1:1\n# <<< pi-image-bridge\n";
     expect(extractManagedHosts(input)).toEqual(["a", "b"]);
@@ -29,5 +41,11 @@ describe("bridge installer", () => {
 
   it("refuses to remove malformed managed blocks", () => {
     expect(() => removeManagedSshConfigBlock("Host a\n# >>> pi-image-bridge\nHost *\n")).toThrow(/malformed/i);
+  });
+
+  it("verifies written managed ssh config includes expected forwarding", () => {
+    const config = buildSshConfigBlock({ hosts: ["*"], port: 38991, remoteBind: "127.0.0.1" });
+    expect(() => verifyManagedSshConfig(config, { port: 38991, remoteBind: "127.0.0.1" })).not.toThrow();
+    expect(() => verifyManagedSshConfig("Host github.com\n", { port: 38991, remoteBind: "127.0.0.1" })).toThrow(/not found/i);
   });
 });

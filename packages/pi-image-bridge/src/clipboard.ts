@@ -6,6 +6,11 @@ export interface ClipboardImage {
   bytes: Uint8Array;
 }
 
+export function getClipboardUnavailableHint(platform: NodeJS.Platform = process.platform): string | undefined {
+  if (platform !== "darwin") return undefined;
+  return "macOS clipboard image extraction is unavailable when the optional native clipboard dependency cannot read images; v1 has no pngpaste, Swift, or AppleScript fallback.";
+}
+
 const require = createRequire(import.meta.url);
 
 function commandBytes(command: string, args: string[]): Uint8Array | undefined {

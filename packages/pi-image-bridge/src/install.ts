@@ -1,3 +1,4 @@
+import { getClipboardUnavailableHint } from "./clipboard.js";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -21,6 +22,10 @@ export function buildSshConfigBlock(options: { hosts: string[]; port: number; re
 export function mergeManagedHosts(existingHosts: string[], requestedHosts: string[]): string[] {
   if (existingHosts.includes("*") || requestedHosts.includes("*")) return ["*"];
   return Array.from(new Set([...existingHosts, ...requestedHosts]));
+}
+
+export function hostMergeBroadensScope(existingHosts: string[], requestedHosts: string[]): boolean {
+  return !existingHosts.includes("*") && existingHosts.length > 0 && requestedHosts.includes("*");
 }
 
 export function extractManagedHosts(input: string): string[] {
@@ -47,6 +52,17 @@ export function removeManagedSshConfigBlock(input: string): string {
   return input.slice(0, start) + input.slice(afterEnd + trailingNewline);
 }
 
+export function verifyManagedSshConfig(input: string, options: { port: number; remoteBind?: string }): void {
+  const remoteBind = options.remoteBind || "127.0.0.1";
+  if (!input.includes(START) || !input.includes(END)) {
+    throw new Error("pi-image-bridge managed SSH config block not found after write.");
+  }
+  const expectedForward = `RemoteForward ${remoteBind}:${options.port} 127.0.0.1:${options.port}`;
+  if (!input.includes(expectedForward)) {
+    throw new Error(`pi-image-bridge managed SSH config missing expected ${expectedForward}.`);
+  }
+}
+
 function parseHosts(args: string[]): string[] {
   const hosts: string[] = [];
   for (let i = 0; i < args.length; i += 1) {
@@ -67,11 +83,18 @@ async function writeSshConfig(args: string[]): Promise<void> {
   const existing = await fs.readFile(configPath, "utf8").catch(() => "");
   const requestedHosts = parseHosts(args);
   const existingManagedHosts = extractManagedHosts(existing);
+  if (hostMergeBroadensScope(existingManagedHosts, requestedHosts)) {
+    console.warn("pi-image-bridge: expanding managed SSH config from explicit hosts to Host * for zero-argument install.");
+  }
   const hosts = mergeManagedHosts(existingManagedHosts, requestedHosts);
   const cleaned = removeManagedSshConfigBlock(existing).trimEnd();
-  const block = buildSshConfigBlock({ hosts, port: Number(process.env.PI_IMAGE_BRIDGE_PORT || "38991"), remoteBind: parseRemoteBind(args) });
+  const port = Number(process.env.PI_IMAGE_BRIDGE_PORT || "38991");
+  const remoteBind = parseRemoteBind(args);
+  const block = buildSshConfigBlock({ hosts, port, remoteBind });
   const next = `${cleaned}${cleaned ? "\n" : ""}${block}`;
   await fs.writeFile(configPath, next, { mode: 0o600 });
+  const written = await fs.readFile(configPath, "utf8");
+  verifyManagedSshConfig(written, { port, remoteBind });
 }
 
 function currentCommand(): string {
@@ -134,4 +157,6 @@ export async function doctorBridge(): Promise<void> {
   const config = await fs.readFile(configPath, "utf8").catch(() => "");
   console.log(config.includes(START) ? "ssh config block is installed" : "ssh config block is missing");
   console.log(process.env.SSH_CONNECTION ? "running inside SSH session" : "not running inside SSH session");
+  const clipboardHint = getClipboardUnavailableHint();
+  if (clipboardHint) console.log(clipboardHint);
 }
