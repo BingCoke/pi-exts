@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildProcessorSpawnOptions, buildStopPlan, createLineBuffer, findProcessId, formatProcessList } from "../../packages/processor/src/index.js";
+import { buildProcessorSpawnOptions, buildStopPlan, createLineBuffer, createProcessorManager, findProcessId, formatProcessList } from "../../packages/processor/src/index.js";
 
 describe("processor helpers", () => {
   it("keeps only the last N output lines", () => {
@@ -45,4 +45,22 @@ describe("processor helpers", () => {
     expect(buildProcessorSpawnOptions("/tmp/app", "darwin")).toMatchObject({ cwd: "/tmp/app", shell: true, detached: true });
     expect(buildProcessorSpawnOptions("C:/app", "win32")).toMatchObject({ cwd: "C:/app", shell: true, detached: false });
   });
+});
+
+describe("processor manager", () => {
+  it("stops a real background process", async () => {
+    const { start, stop, stopAll } = createProcessorManager(process.cwd());
+    const record = start("node -e \"setTimeout(()=>{}, 30000)\"", { name: "test-proc" });
+    expect(record.status).toBe("running");
+    const stopped = stop("test-proc");
+    expect(stopped).toBeDefined();
+    expect(stopped!.status).toBe("stopped");
+    // wait for exit to clean up
+    await new Promise<void>((resolve) => {
+      if (!record.child) return resolve();
+      const timeout = setTimeout(() => resolve(), 5000);
+      record.child.on("exit", () => { clearTimeout(timeout); resolve(); });
+    });
+    stopAll();
+  }, 15000);
 });

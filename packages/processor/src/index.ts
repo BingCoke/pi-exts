@@ -89,7 +89,7 @@ export function buildStopPlan(pid: number, platform: NodeJS.Platform = process.p
   return { kind: "process-group", pid: -pid };
 }
 
-function stopProcessTree(child: ChildProcessWithoutNullStreams, platform: NodeJS.Platform = process.platform): void {
+export function stopProcessTree(child: ChildProcessWithoutNullStreams, platform: NodeJS.Platform = process.platform): void {
   if (!child.pid) {
     child.kill();
     return;
@@ -107,7 +107,7 @@ function stopProcessTree(child: ChildProcessWithoutNullStreams, platform: NodeJS
   }
 }
 
-function createProcessorManager(cwd: string) {
+export function createProcessorManager(cwd: string) {
   const processes = new Map<string, ProcessorRecord>();
   let nextId = 1;
 
