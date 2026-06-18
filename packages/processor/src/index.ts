@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams, type SpawnOptionsWithoutStdio } from "node:child_process";
 import path from "node:path";
 import { errorResult, textResult } from "../../shared/src/tool-result.js";
 
@@ -68,6 +68,45 @@ export function formatProcessList(processes: Map<string, ProcessorRecord>): stri
     .join("\n");
 }
 
+export type StopPlan =
+  | { kind: "taskkill"; command: "taskkill"; args: string[] }
+  | { kind: "process-group"; pid: number };
+
+export function buildProcessorSpawnOptions(cwd: string, platform: NodeJS.Platform = process.platform): SpawnOptionsWithoutStdio {
+  return {
+    cwd,
+    env: process.env,
+    shell: true,
+    detached: platform !== "win32",
+    windowsHide: true,
+  };
+}
+
+export function buildStopPlan(pid: number, platform: NodeJS.Platform = process.platform): StopPlan {
+  if (platform === "win32") {
+    return { kind: "taskkill", command: "taskkill", args: ["/PID", String(pid), "/T", "/F"] };
+  }
+  return { kind: "process-group", pid: -pid };
+}
+
+function stopProcessTree(child: ChildProcessWithoutNullStreams, platform: NodeJS.Platform = process.platform): void {
+  if (!child.pid) {
+    child.kill();
+    return;
+  }
+  const plan = buildStopPlan(child.pid, platform);
+  if (plan.kind === "taskkill") {
+    const result = spawnSync(plan.command, plan.args, { stdio: "ignore" });
+    if (result.status !== 0) child.kill();
+    return;
+  }
+  try {
+    process.kill(plan.pid);
+  } catch {
+    child.kill();
+  }
+}
+
 function createProcessorManager(cwd: string) {
   const processes = new Map<string, ProcessorRecord>();
   let nextId = 1;
@@ -76,12 +115,7 @@ function createProcessorManager(cwd: string) {
     const id = `proc-${nextId++}`;
     const output = createLineBuffer(options.maxOutputLines ?? 500);
     const processCwd = options.cwd ? path.resolve(cwd, options.cwd) : cwd;
-    const child = spawn(command, {
-      cwd: processCwd,
-      env: process.env,
-      shell: true,
-      windowsHide: true,
-    });
+    const child = spawn(command, buildProcessorSpawnOptions(processCwd));
     const record: ProcessorRecord = {
       id,
       name: options.name,
@@ -111,7 +145,7 @@ function createProcessorManager(cwd: string) {
     if (!record) return undefined;
     if (record.status === "running" && record.child) {
       record.status = "stopped";
-      record.child.kill();
+      stopProcessTree(record.child);
     }
     return record;
   }
@@ -120,7 +154,7 @@ function createProcessorManager(cwd: string) {
     for (const record of processes.values()) {
       if (record.status === "running" && record.child) {
         record.status = "stopped";
-        record.child.kill();
+        stopProcessTree(record.child);
       }
     }
   }

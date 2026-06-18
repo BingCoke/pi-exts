@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createLineBuffer, findProcessId, formatProcessList } from "../../packages/processor/src/index.js";
+import { buildProcessorSpawnOptions, buildStopPlan, createLineBuffer, findProcessId, formatProcessList } from "../../packages/processor/src/index.js";
 
 describe("processor helpers", () => {
   it("keeps only the last N output lines", () => {
@@ -25,5 +25,24 @@ describe("processor helpers", () => {
     ]);
     expect(formatProcessList(processes)).toContain("proc-1 web running npm run dev");
     expect(formatProcessList(processes)).toContain("proc-2 - exited(0) npm test");
+  });
+
+  it("uses taskkill to stop a Windows process tree", () => {
+    expect(buildStopPlan(1234, "win32")).toEqual({
+      kind: "taskkill",
+      command: "taskkill",
+      args: ["/PID", "1234", "/T", "/F"],
+    });
+  });
+
+  it("uses negative process group pid to stop POSIX process trees", () => {
+    expect(buildStopPlan(1234, "linux")).toEqual({ kind: "process-group", pid: -1234 });
+    expect(buildStopPlan(1234, "darwin")).toEqual({ kind: "process-group", pid: -1234 });
+  });
+
+  it("starts POSIX processors as detached process groups", () => {
+    expect(buildProcessorSpawnOptions("/tmp/app", "linux")).toMatchObject({ cwd: "/tmp/app", shell: true, detached: true });
+    expect(buildProcessorSpawnOptions("/tmp/app", "darwin")).toMatchObject({ cwd: "/tmp/app", shell: true, detached: true });
+    expect(buildProcessorSpawnOptions("C:/app", "win32")).toMatchObject({ cwd: "C:/app", shell: true, detached: false });
   });
 });
