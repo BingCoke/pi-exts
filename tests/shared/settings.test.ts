@@ -3,23 +3,24 @@ import { describe, expect, it } from "vitest";
 import { mergePersonalSettings, resolveOutputPath } from "../../packages/shared/src/settings.js";
 
 const globalSettings = {
-  personalPiTools: {
-    imageTool: { model: "global-model", outputDir: "~/global-images" },
+  "@bingcoke/ext": {
+    imageTool: { model: "global-model", apiKey: "global-key" },
     sshCopy: { remoteImageDir: "~/global-paste" }
   }
 };
 
 const projectSettings = {
-  personalPiTools: {
-    imageTool: { outputDir: ".pi/project-images" }
+  "@bingcoke/ext": {
+    imageTool: { baseUrl: "https://images.example/v1" }
   }
 };
 
 describe("shared settings", () => {
-  it("deep merges project personalPiTools over global settings", () => {
+  it("deep merges project @bingcoke/ext over global settings", () => {
     const merged = mergePersonalSettings(globalSettings, projectSettings);
     expect(merged.imageTool.model).toBe("global-model");
-    expect(merged.imageTool.outputDir).toBe(".pi/project-images");
+    expect(merged.imageTool.apiKey).toBe("global-key");
+    expect(merged.imageTool.baseUrl).toBe("https://images.example/v1");
     expect(merged.sshCopy.remoteImageDir).toBe("~/global-paste");
   });
 

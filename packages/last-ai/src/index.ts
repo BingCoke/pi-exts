@@ -6,6 +6,7 @@ import { spawn } from "node:child_process";
 
 type Entry = { type?: string; message?: { role?: string; content?: unknown } };
 type TextBlock = { type?: string; text?: string };
+type TuiLike = { stop(): void; start(): void; requestRender(force?: boolean): void };
 
 const SEPARATOR = "----";
 
@@ -43,13 +44,24 @@ export function extractReplyBelowSeparator(markdown: string): string {
   return markdown.slice(index + separatorMatch[0].length).trim();
 }
 
-async function openExternalEditor(filePath: string): Promise<void> {
-  const editor = process.env.VISUAL || process.env.EDITOR || (process.platform === "win32" ? "notepad" : "vi");
-  await new Promise<void>((resolve, reject) => {
-    const child = spawn(editor, [filePath], { stdio: "inherit", shell: process.platform === "win32" });
-    child.on("error", reject);
-    child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`${editor} exited with ${code}`))));
-  });
+async function openExternalEditor(filePath: string, tui?: TuiLike): Promise<number | null> {
+  const editorCmd = process.env.VISUAL || process.env.EDITOR || (process.platform === "win32" ? "notepad" : "vi");
+  const [editor, ...editorArgs] = editorCmd.split(" ");
+  try {
+    tui?.stop();
+    process.stdout.write(`Launching external editor: ${editorCmd}\nPi will resume when the editor exits.\n`);
+    return await new Promise((resolve) => {
+      const child = spawn(editor, [...editorArgs, filePath], {
+        stdio: "inherit",
+        shell: process.platform === "win32",
+      });
+      child.on("error", () => resolve(null));
+      child.on("close", (code) => resolve(code));
+    });
+  } finally {
+    tui?.start();
+    tui?.requestRender(true);
+  }
 }
 
 export default function lastAiExtension(pi: ExtensionAPI) {
@@ -63,18 +75,33 @@ export default function lastAiExtension(pi: ExtensionAPI) {
         return;
       }
       const filePath = path.join(os.tmpdir(), `pi-last-ai-${Date.now()}.md`);
+      let edited: string | undefined;
       try {
         await fs.writeFile(filePath, buildLastAiDocument(messages), "utf8");
-        await openExternalEditor(filePath);
-        const edited = await fs.readFile(filePath, "utf8");
-        const reply = extractReplyBelowSeparator(edited);
-        if (reply) {
-          ctx.ui.setEditorText(reply);
-        } else {
-          ctx.ui.notify("No reply text found below ----", "warning");
+        const status = ctx.hasUI
+          ? await ctx.ui.custom<number | null>((tui, _theme, _keybindings, done) => {
+              setTimeout(() => {
+                openExternalEditor(filePath, tui).then(done).catch(() => done(null));
+              }, 0);
+              return {
+                invalidate() {},
+                render() { return []; },
+              };
+            }, { overlay: true })
+          : await openExternalEditor(filePath);
+        if (status !== 0) {
+          ctx.ui.notify(status === null ? "External editor failed to launch" : `External editor exited with ${status}`, "warning");
+          return;
         }
+        edited = await fs.readFile(filePath, "utf8");
       } finally {
         await fs.rm(filePath, { force: true }).catch(() => {});
+      }
+      const reply = extractReplyBelowSeparator(edited);
+      if (reply) {
+        ctx.ui.setEditorText(reply);
+      } else {
+        ctx.ui.notify("No reply text found below ----", "warning");
       }
     },
   });

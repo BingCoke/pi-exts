@@ -7,8 +7,10 @@ export interface ImageToolSettings {
   apiKeyEnv?: string;
   apiKey?: string;
   model?: string;
-  outputDir?: string;
-  size?: string;
+  taskPollPath?: string;
+  taskInitialDelayMs?: number;
+  taskPollIntervalMs?: number;
+  taskTimeoutMs?: number;
 }
 
 export interface SshCopySettings {
@@ -19,18 +21,16 @@ export interface SshCopySettings {
   insertMode?: "path" | "markdown";
 }
 
-export interface PersonalPiToolsSettings {
+export interface BingcokeExtSettings {
   imageTool: ImageToolSettings;
   sshCopy: SshCopySettings;
 }
 
-const defaults: PersonalPiToolsSettings = {
+const defaults: BingcokeExtSettings = {
   imageTool: {
     baseUrl: "https://api.openai.com/v1",
     apiKeyEnv: "OPENAI_API_KEY",
     model: "gpt-image-1",
-    outputDir: ".pi/generated-images",
-    size: "1024x1024",
   },
   sshCopy: {
     enabled: true,
@@ -55,13 +55,13 @@ function deepMerge<T extends Record<string, unknown>>(base: T, override: unknown
   return out as T;
 }
 
-export function mergePersonalSettings(globalSettings: unknown, projectSettings: unknown): PersonalPiToolsSettings {
-  const globalPersonal = isRecord(globalSettings) ? globalSettings.personalPiTools : undefined;
-  const projectPersonal = isRecord(projectSettings) ? projectSettings.personalPiTools : undefined;
+export function mergePersonalSettings(globalSettings: unknown, projectSettings: unknown): BingcokeExtSettings {
+  const globalExt = isRecord(globalSettings) ? globalSettings["@bingcoke/ext"] : undefined;
+  const projectExt = isRecord(projectSettings) ? projectSettings["@bingcoke/ext"] : undefined;
   return deepMerge(
-    deepMerge(defaults as unknown as Record<string, unknown>, globalPersonal),
-    projectPersonal,
-  ) as unknown as PersonalPiToolsSettings;
+    deepMerge(defaults as unknown as Record<string, unknown>, globalExt),
+    projectExt,
+  ) as unknown as BingcokeExtSettings;
 }
 
 export function readJsonIfExists(filePath: string): unknown {
@@ -77,7 +77,7 @@ export function loadPersonalSettings(
   cwd: string,
   projectTrusted: boolean,
   agentDir = path.join(process.env.USERPROFILE ?? process.env.HOME ?? "", ".pi", "agent"),
-): PersonalPiToolsSettings {
+): BingcokeExtSettings {
   const globalSettings = readJsonIfExists(path.join(agentDir, "settings.json"));
   const projectSettings = projectTrusted ? readJsonIfExists(path.join(cwd, ".pi", "settings.json")) : {};
   return mergePersonalSettings(globalSettings, projectSettings);
