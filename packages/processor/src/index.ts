@@ -383,19 +383,6 @@ export function createProcessorManager(cwd: string, onChange?: () => void, onEve
     return record;
   }
 
-  function stop(idOrName: string): ProcessorRecord | undefined {
-    const id = findProcessId(processes, idOrName);
-    if (!id) return undefined;
-    const record = processes.get(id);
-    if (!record) return undefined;
-    if (record.status === "running" && record.child) {
-      record.status = "stopped";
-      stopProcessTree(record.child);
-      notifyChange();
-    }
-    return record;
-  }
-
   function clean(idOrName?: string, actor: Extract<ProcessorEventActor, "user" | "agent"> = "agent", emitEvents = true): ProcessorRecord[] {
     const ids = idOrName ? [findProcessId(processes, idOrName)].filter((id): id is string => Boolean(id)) : Array.from(processes.keys());
     const removed: ProcessorRecord[] = [];
@@ -790,10 +777,6 @@ export default function processorExtension(pi: ExtensionAPI) {
         }
         return;
       }
-      if (action === "compact") {
-        closeProcessorList();
-        return;
-      }
       if (action === "output" && idOrName) {
         const id = findProcessId(current.processes, idOrName);
         const record = id ? current.processes.get(id) : undefined;
@@ -815,7 +798,7 @@ export default function processorExtension(pi: ExtensionAPI) {
         refreshUi();
         return;
       }
-      ctx.ui.notify("Usage: /processor list | compact | output <id-or-name> | clean [id-or-name]", "warning");
+      ctx.ui.notify("Usage: /processor list | output <id-or-name> | clean [id-or-name]", "warning");
       refreshUi();
     },
   });

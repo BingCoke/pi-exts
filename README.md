@@ -66,7 +66,6 @@ processor_list
 processor_output
 processor_clean
 /processor list
-/processor compact
 /processor output <id-or-name>
 /processor clean [id-or-name]
 ```
@@ -77,7 +76,7 @@ Use it for Claude Code-style background tasks, for example starting a web server
 processor_start({ "name": "web", "command": "npm run dev" })
 ```
 
-Processes are kept for the current Pi session and stopped on session shutdown. Running processors are shown in a compact Pi UI widget; processors that exit on their own notify the agent with recent output and are removed from the active list. `processor_clean` stops and removes processors; `/processor list` focuses the same widget in a scrollable interactive list mode, and `/processor compact` returns it to compact mode.
+Processes are kept for the current Pi session and stopped on session shutdown. Running processors are shown in a compact Pi UI widget; processors that exit on their own notify the agent with recent output and are removed from the active list. `processor_clean` stops and removes processors; `/processor list` focuses the same widget in a scrollable interactive list mode.
 
 ### coding-guardrails
 
