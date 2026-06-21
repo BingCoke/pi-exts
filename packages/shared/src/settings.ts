@@ -13,17 +13,8 @@ export interface ImageToolSettings {
   taskTimeoutMs?: number;
 }
 
-export interface SshCopySettings {
-  enabled?: boolean;
-  bridgeUrl?: string;
-  remoteImageDir?: string;
-  shortcut?: string;
-  insertMode?: "path" | "markdown";
-}
-
 export interface BingcokeExtSettings {
   imageTool: ImageToolSettings;
-  sshCopy: SshCopySettings;
 }
 
 const defaults: BingcokeExtSettings = {
@@ -31,13 +22,6 @@ const defaults: BingcokeExtSettings = {
     baseUrl: "https://api.openai.com/v1",
     apiKeyEnv: "OPENAI_API_KEY",
     model: "gpt-image-1",
-  },
-  sshCopy: {
-    enabled: true,
-    bridgeUrl: "http://127.0.0.1:38991",
-    remoteImageDir: ".pi/pasted-images",
-    shortcut: "alt+v",
-    insertMode: "path",
   },
 };
 

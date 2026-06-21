@@ -5,8 +5,7 @@ import { mergePersonalSettings, resolveOutputPath } from "../../packages/shared/
 const globalSettings = {
   "@bingcoke/ext": {
     imageTool: { model: "global-model", apiKey: "global-key" },
-    sshCopy: { remoteImageDir: "~/global-paste" }
-  }
+  },
 };
 
 const projectSettings = {
@@ -21,7 +20,6 @@ describe("shared settings", () => {
     expect(merged.imageTool.model).toBe("global-model");
     expect(merged.imageTool.apiKey).toBe("global-key");
     expect(merged.imageTool.baseUrl).toBe("https://images.example/v1");
-    expect(merged.sshCopy.remoteImageDir).toBe("~/global-paste");
   });
 
   it("resolves cwd-relative output paths", () => {

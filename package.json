@@ -6,30 +6,22 @@
   "description": "Personal Pi extensions, skills, and helper tools.",
   "keywords": ["pi-package", "pi", "pi-extension"],
   "workspaces": ["packages/*"],
-  "bin": {
-    "pi-image-bridge": "./dist/pi-image-bridge/cli.js"
-  },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "bridge:serve": "npm run build -- --pretty false && node dist/pi-image-bridge/cli.js serve",
-    "bridge:install": "npm run build -- --pretty false && node dist/pi-image-bridge/cli.js install",
-    "bridge:doctor": "npm run build -- --pretty false && node dist/pi-image-bridge/cli.js doctor",
     "prepack": "npm run build"
   },
   "pi": {
     "extensions": [
       "./packages/last-ai/src/index.ts",
       "./packages/image-tool/src/index.ts",
-      "./packages/ssh-copy/src/index.ts",
-      "./packages/processor/src/index.ts"
+      "./packages/processor/src/index.ts",
+      "./packages/coding-guardrails/src/index.ts"
     ],
-    "skills": ["./skills"]
-  },
-  "optionalDependencies": {
-    "@mariozechner/clipboard": "^0.2.0"
+    "skills": ["./skills"],
+    "themes": ["./themes"]
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

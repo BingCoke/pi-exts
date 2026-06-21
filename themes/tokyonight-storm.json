@@ -1,0 +1,82 @@
+{
+	"$schema": "https://raw.githubusercontent.com/earendil-works/pi/main/packages/coding-agent/src/modes/interactive/theme/theme-schema.json",
+	"name": "tokyonight-storm",
+	"vars": {
+		"bg": "#1f2335",
+		"fg": "#7982a9",
+		"red": "#f7768e",
+		"green": "#73daca",
+		"yellow": "#e0af68",
+		"blue": "#7aa2f7",
+		"purple": "#bb9af7",
+		"cyan": "#7dcfff",
+		"brightWhite": "#a9b1d6",
+		"black": "#3b4261",
+		"comment": "#565f89",
+		"bgLight": "#292e42"
+	},
+	"colors": {
+		"accent": "blue",
+		"border": "black",
+		"borderAccent": "cyan",
+		"borderMuted": "bgLight",
+		"success": "green",
+		"error": "red",
+		"warning": "yellow",
+		"muted": "fg",
+		"dim": "comment",
+		"text": "brightWhite",
+		"thinkingText": "comment",
+
+		"selectedBg": "black",
+		"userMessageBg": "bgLight",
+		"userMessageText": "brightWhite",
+		"customMessageBg": "#2d2840",
+		"customMessageText": "brightWhite",
+		"customMessageLabel": "purple",
+		"toolPendingBg": "#1e2236",
+		"toolSuccessBg": "#24283b",
+		"toolErrorBg": "#2c2633",
+		"toolTitle": "brightWhite",
+		"toolOutput": "fg",
+
+		"mdHeading": "yellow",
+		"mdLink": "blue",
+		"mdLinkUrl": "comment",
+		"mdCode": "cyan",
+		"mdCodeBlock": "green",
+		"mdCodeBlockBorder": "black",
+		"mdQuote": "fg",
+		"mdQuoteBorder": "black",
+		"mdHr": "black",
+		"mdListBullet": "blue",
+
+		"toolDiffAdded": "green",
+		"toolDiffRemoved": "red",
+		"toolDiffContext": "comment",
+
+		"syntaxComment": "#565f89",
+		"syntaxKeyword": "purple",
+		"syntaxFunction": "blue",
+		"syntaxVariable": "brightWhite",
+		"syntaxString": "green",
+		"syntaxNumber": "yellow",
+		"syntaxType": "cyan",
+		"syntaxOperator": "cyan",
+		"syntaxPunctuation": "fg",
+
+		"thinkingOff": "bgLight",
+		"thinkingMinimal": "comment",
+		"thinkingLow": "blue",
+		"thinkingMedium": "cyan",
+		"thinkingHigh": "purple",
+		"thinkingXhigh": "red",
+
+		"bashMode": "green"
+	},
+	"export": {
+		"pageBg": "#1f2335",
+		"cardBg": "#292e42",
+		"infoBg": "#2a2e3a"
+	}
+}
