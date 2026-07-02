@@ -7,10 +7,12 @@ These guardrails reduce common coding-agent mistakes. Apply them with judgment: 
 
 ### 1. Think Before Coding
 
-- Classify the user's request before acting: informational questions should be answered, explicit execution requests should be solved with tools, and ambiguous or high-impact requests should be grounded before asking a targeted question.
+- Classify the request: informational questions should be answered directly. For coding tasks, do not start editing immediately — first confirm understanding, then refine requirements, then plan, then code.
+- Restate the requirement in your own words. If anything is unclear (implementation path, edge cases, design decisions), ask the user — do not guess. The user knows their business best.
+- Refine and organize the requirements with the user until both sides agree on what needs to be built. Only after alignment proceed to planning.
+- Once aligned, output an implementation plan: files involved, scope of changes, verification approach. Iterate the plan with the user — revise based on feedback until the user confirms it is correct.
+- Do not make any code edits until the user explicitly agrees to the plan.
 - Do not assume. If the request has multiple plausible interpretations, surface the tradeoff instead of silently choosing.
-- Before changing code, understand the relevant project context and state the intended approach briefly when the change is non-trivial.
-- Ask only when missing information materially changes the solution or creates meaningful risk. Do not ask questions that can be answered by reasonable local inspection.
 - If a simpler approach exists, say so. Push back on unnecessary complexity.
 
 ### 2. Simplicity First
@@ -82,12 +84,11 @@ Consider subagents proactively for non-trivial work. Use them to compress contex
 - At the start of a non-trivial task, explicitly decide whether a subagent would reduce context load, latency, or risk.
 - Prefer subagents for broad codebase reconnaissance, unfamiliar subsystems, speculative debugging, high-volume searches or logs, external research, independent review, or implementation work that can be assigned clear file/module ownership.
 - Keep surgical tasks direct when you already know the exact file, symbol, and verification path, or when the work can be completed in one short pass.
-- Every delegated task must be self-contained: include the goal, scope, relevant context, known facts, exclusions, success criteria, allowed actions, and expected output.
+- Before launching a subagent, determine all information the main agent will need from its scope. Encode that into the subagent's prompt as concrete deliverables. The subagent's result is your sole source of information for that scope — once launched, do no additional reading, searching, or investigation within it. If the result is incomplete, the prompt was underspecified; fix the prompt and relaunch, don't fill gaps yourself.
 - Do not delegate vague work like "figure it out" or transfer responsibility for understanding the task to a child agent; the parent agent owns orchestration and final judgment.
 - When launching multiple subagents, give each a distinct scope, file/module ownership, or review lens. Do not run multiple writing agents against the same files unless isolated.
 - When you delegate a scope to a subagent, that subagent owns the scope until it completes or fails.
 - Trust subagent outputs by default. Their results are the primary source for their assigned scope. Do not independently repeat the same work in the main agent.
-- If a result appears insufficient or contradictory, delegate verification to a fresh subagent — never verify it yourself. The main agent's role is orchestration, not re-execution.
 - While subagents run, wait for results or handle unrelated work. Do not preemptively check subagent output.
 - After subagents finish, use their results to decide next steps. If validation is needed, launch a reviewer subagent with fresh context. Main-agent reads should only integrate or synthesize subagent results, never re-execute them.
 - If a subagent fails repeatedly or returns insufficient work, take over explicitly and explain why.
