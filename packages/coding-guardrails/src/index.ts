@@ -46,9 +46,10 @@ Consider subagents proactively for non-trivial work. Use them to compress contex
 - Do not delegate vague work like "figure it out" or transfer responsibility for understanding the task to a child agent; the parent agent owns orchestration and final judgment.
 - When launching multiple subagents, give each a distinct scope, file/module ownership, or review lens. Do not run multiple writing agents against the same files unless isolated.
 - When you delegate a scope to a subagent, that subagent owns the scope until it completes or fails.
-- Do not independently repeat the same broad searches, reads, or implementation work in the main agent.
-- While subagents run, the main agent should orchestrate, handle unrelated independent work, or wait for results.
-- Use main-agent reads only to verify a specific claim, resolve a contradiction, fill a gap, or integrate the subagent's result.
+- Trust subagent outputs by default. Their results are the primary source for their assigned scope. Do not independently repeat the same work in the main agent.
+- If a result appears insufficient or contradictory, delegate verification to a fresh subagent — never verify it yourself. The main agent's role is orchestration, not re-execution.
+- While subagents run, wait for results or handle unrelated work. Do not preemptively check subagent output.
+- After subagents finish, use their results to decide next steps. If validation is needed, launch a reviewer subagent with fresh context. Main-agent reads should only integrate or synthesize subagent results, never re-execute them.
 - If a subagent fails repeatedly or returns insufficient work, take over explicitly and explain why.
 - After subagents finish, summarize what you accepted, what you rejected, and what still needs direct work.
 
