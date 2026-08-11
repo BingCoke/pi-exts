@@ -1,6 +1,6 @@
 # Pi Personal Tools
 
-A personal Pi package with four extensions.
+A personal Pi package with five extensions.
 
 ## Extensions
 
@@ -81,6 +81,32 @@ Processes are kept for the current Pi session and stopped on session shutdown. R
 ### coding-guardrails
 
 Appends a compact coding discipline section to Pi's system prompt each turn. It emphasizes thinking before coding, simplicity, surgical edits, proactive subagent delegation, avoiding duplicate main-agent work, verification honesty, and dirty-worktree safety.
+
+### provider-relays
+
+Creates relay providers without duplicating model definitions. A provider id in the form `<source-provider>@<relay-name>` inherits the source provider's built-in model catalog while using the relay's endpoint and credentials from `~/.pi/agent/models.json`.
+
+Example:
+
+```json
+{
+  "providers": {
+    "anthropic@backup": {
+      "name": "Anthropic backup",
+      "baseUrl": "https://relay.example.com",
+      "apiKey": "$RELAY_API_KEY",
+      "api": "anthropic-messages"
+    },
+    "openai@primary": {
+      "baseUrl": "https://openai-relay.example.com/v1",
+      "apiKey": "$OPENAI_RELAY_KEY",
+      "api": "openai-completions"
+    }
+  }
+}
+```
+
+The inherited model ids and names stay unchanged. Choose models with `/model source@relay/model-id`; run `/reload` after changing `models.json`.
 
 ## Pi package install
 
