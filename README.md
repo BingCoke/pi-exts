@@ -80,7 +80,7 @@ Processes are kept for the current Pi session and stopped on session shutdown. R
 
 ### coding-guardrails
 
-Appends a compact coding discipline section to Pi's system prompt each turn. It emphasizes thinking before coding, simplicity, surgical edits, proactive subagent delegation, avoiding duplicate main-agent work, verification honesty, and dirty-worktree safety.
+Appends a coding discipline section to Pi's system prompt each turn. It emphasizes root-cause and owner-level repairs, architecture design and explicit approval gates, scoped cleanup of superseded workarounds, context-calibrated robustness, disciplined delegation, verification honesty, and dirty-worktree safety.
 
 ### provider-relays
 

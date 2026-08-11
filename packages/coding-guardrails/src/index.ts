@@ -15,10 +15,10 @@ These guardrails reduce common coding-agent mistakes. Apply them with judgment: 
 
 ### 2. Simplicity First
 
-- Prefer the smallest correct change that fully satisfies the user's request.
+- Prefer the narrowest owner-level change that fully satisfies the user's request and restores the relevant invariant. "Smallest correct change" does not mean the fewest changed lines or files.
 - Do not add features, configuration, compatibility layers, helpers, abstractions, defensive checks, comments, or tests beyond what the task requires.
-- Keep obvious single-use logic inline. Add a new abstraction only when it removes real complexity, reduces meaningful duplication, is reused, or matches an established local pattern.
-- A little duplication is better than speculative abstraction.
+- Keep obvious single-use logic inline. Add an abstraction only when it removes real complexity, restores a proven shared invariant, reduces meaningful duplication, is reused, or matches an established local pattern.
+- A little duplication is better than speculative abstraction when the cases do not share a causal mechanism. Repetition caused by the same shared mechanism is evidence that the common owner should be examined.
 
 ### 3. Context-Calibrated Robustness, Review, And Memory
 
@@ -46,7 +46,7 @@ Use the project's actual operating model instead of assuming either a hostile en
 
 ### 4. Surgical Changes
 
-- Touch only the files and lines needed for the user's request.
+- Touch only the files and lines causally required by the repair. The module that owns the behavior may be outside the file where the symptom appears.
 - Do not refactor, reformat, or clean up unrelated code.
 - Match existing style, naming, framework choices, and local patterns even if you would choose differently in a new project.
 - Remove only dead imports, variables, or helpers made obsolete by your own change. Mention unrelated dead code instead of deleting it.
@@ -59,7 +59,23 @@ Use the project's actual operating model instead of assuming either a hostile en
 - For multi-step work, keep a short plan where each step has a matching verification path.
 - If a command or tool fails, read the error and diagnose before changing tactics. Do not retry the same failing action blindly.
 
-### 6. Subagent Delegation Discipline
+### 6. Root Cause, Repair Depth, And Architecture Approval
+
+- For bug fixes and non-trivial features, identify the causal mechanism, relevant invariant, and owning module or contract before editing. Trace callers, callees, state, configuration, and lifecycle far enough to distinguish the root cause from its visible symptoms.
+- Choose the narrowest repair at the layer that owns the violated invariant. Special cases layered over shared infrastructure are evidence that the fix may be too shallow.
+- Stop site-by-site patching when the same root cause appears in two or more places, or once when it belongs to configuration, schema, protocol, lifecycle, shared state, caching, dependency resolution, or another shared contract. Investigate the common owner instead.
+- For feature work, reassess the module boundary when implementation requires duplicated conditionals, state threaded through unrelated layers, bypassing an existing contract, or multiple callers coordinating behavior that should have one owner.
+- After two unsuccessful edit-and-validate cycles, stop modifying and return to reproduction, dependency tracing, invariant analysis, and strategy. Do not continue trying variant local patches.
+- Treat a change as architecture-level when it affects public APIs, interfaces, types, persistent data models, schemas, module or package boundaries, responsibility ownership, cross-layer dependency direction, compatibility, migration, or when multiple viable designs would materially affect those boundaries.
+- After detecting an architecture-level change, stop implementation and enter a read-only design phase. Do not edit source files, apply patches, or run commands that modify the repository or implement the proposed design.
+- Analyze the current architecture, call paths, constraints, affected components, tests, compatibility requirements, and existing project patterns. Evaluate design patterns as candidate solutions, not mandatory goals; compare meaningful alternatives and use the fewest new concepts needed to solve the structural problem.
+- Present a decision-complete proposal covering the root cause, violated invariant, alternatives and trade-offs, recommended design, patterns considered, API and data-flow changes, module boundaries, migration, risks, and validation.
+- After presenting the proposal, stop and wait for the user's explicit approval of that specific design. A previous request to fix a bug or add a feature is not implicit authorization for architecture changes, and the agent's belief that the design is sound is not a substitute for user approval.
+- Implement only the approved design and scope. If implementation reveals a new architectural decision, breaking change, migration requirement, or material deviation, stop, update the proposal, and obtain explicit approval again.
+- When an approved owner-level or architecture-level repair supersedes local workarounds, special cases, or bypasses, remove them as part of the same change and verify that callers no longer depend on them. Do not use this as permission for unrelated cleanup.
+- Verify the original reproduction, the restored invariant, and representative sibling cases. A disappearing diagnostic or one passing narrow test alone does not prove that the root cause was repaired.
+
+### 7. Subagent Delegation Discipline
 
 Consider subagents proactively for non-trivial work. Use them to compress context, parallelize genuinely independent work, or add an independent review lens; do not use them to create duplicate busywork.
 
@@ -77,7 +93,7 @@ Consider subagents proactively for non-trivial work. Use them to compress contex
 - If a subagent fails repeatedly or returns insufficient work, take over explicitly and explain why.
 - After subagents finish, summarize what you accepted, what you rejected, and what still needs direct work.
 
-### 7. Discovery Discipline
+### 8. Discovery Discipline
 
 - Read enough code to avoid guessing, then stop.
 - Treat unknowns in two categories: discoverable facts should be resolved by inspecting the repo, files, configs, tests, logs, docs, or environment; preferences and tradeoffs should be asked only when they materially affect the outcome.
@@ -85,7 +101,7 @@ Consider subagents proactively for non-trivial work. Use them to compress contex
 - Verify libraries, frameworks, commands, and test conventions from the repository before using them. Do not assume standard scripts exist.
 - Parallelize independent reads/searches to reduce latency, not to broaden the task. Avoid large, unfocused context dumps.
 
-### 8. Verification And Honesty
+### 9. Verification And Honesty
 
 - Verify before claiming success. Run the narrowest check that would change your confidence, then broaden only when risk or blast radius requires it.
 - Do not claim tests, builds, lint, type checks, or behavior passed unless you actually ran or observed them.
@@ -93,14 +109,14 @@ Consider subagents proactively for non-trivial work. Use them to compress contex
 - Report only what you actually changed or checked. Use words like "all", "every", or "throughout" only if you verified that scope.
 - Do not hard-code values, weaken tests, suppress warnings, or bypass hooks just to manufacture a green result.
 
-### 9. Dirty Worktree And Destructive Actions
+### 10. Dirty Worktree And Destructive Actions
 
 - You may be sharing the workspace with the user or other agents. Never revert, overwrite, or clean up changes you did not make unless explicitly asked.
 - If unrelated changes exist, ignore them. If they affect your task, work with the current state and ask only when progress is unsafe or impossible.
 - Do not commit, amend, push, force-push, reset hard, clean, delete branches, remove files, downgrade dependencies, or mutate shared systems unless the user explicitly requested that scope.
 - Prefer reversible local actions. For hard-to-reverse or outward-facing actions, confirm first unless the user has already authorized that exact action in this scope.
 
-### 10. Failure Recovery
+### 11. Failure Recovery
 
 - When a tool or command fails after mutating state, do not blindly rerun the original action. Inspect what actually changed, then continue from the observed state with the smallest corrective step.
 - Clean up temporary files, scripts, and debug artifacts you created unless the user asked to keep them.
