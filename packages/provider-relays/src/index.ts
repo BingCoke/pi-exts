@@ -10,12 +10,14 @@ import {
 type Api = NonNullable<ProviderModelConfig["api"]>;
 
 export type RelayConfig = {
+  [key: string]: unknown;
   name?: string;
   baseUrl?: string;
   apiKey?: string;
   api?: Api;
   headers?: Record<string, string>;
   authHeader?: boolean;
+  modelOverrides?: Record<string, Record<string, unknown>>;
 };
 
 export type ModelsConfig = {
@@ -52,23 +54,47 @@ export function sourceProviderId(relayProviderId: string): string | undefined {
   return relayProviderId.slice(0, separator);
 }
 
+function isConfigObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function mergeConfig(
+  base: Record<string, unknown>,
+  override?: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged = { ...base };
+  if (!override) return merged;
+
+  for (const [key, value] of Object.entries(override)) {
+    const baseValue = merged[key];
+    merged[key] = isConfigObject(baseValue) && isConfigObject(value)
+      ? mergeConfig(baseValue, value)
+      : value;
+  }
+  return merged;
+}
+
 export function buildInheritedModels(
   sourceModels: readonly CatalogModel[],
   apiOverride?: Api,
+  modelOverrides: Record<string, Record<string, unknown>> = {},
 ): ProviderModelConfig[] {
-  return sourceModels.map((model) => ({
-    id: model.id,
-    name: model.name,
-    api: apiOverride ?? model.api,
-    reasoning: model.reasoning,
-    thinkingLevelMap: model.thinkingLevelMap,
-    input: [...model.input],
-    cost: { ...model.cost },
-    contextWindow: model.contextWindow,
-    maxTokens: model.maxTokens,
-    headers: model.headers,
-    compat: model.compat,
-  }));
+  return sourceModels.map((model) => {
+    const { provider: _provider, baseUrl: _baseUrl, ...sourceConfig } = model;
+    const override = modelOverrides[model.id];
+    const merged = mergeConfig(sourceConfig, override);
+    const { provider: _overrideProvider, ...modelConfig } = merged;
+
+    return {
+      ...modelConfig,
+      id: model.id,
+      api: override && "api" in override
+        ? (modelConfig.api as Api)
+        : apiOverride ?? (modelConfig.api as Api),
+      input: Array.isArray(modelConfig.input) ? [...modelConfig.input] : modelConfig.input,
+      cost: isConfigObject(modelConfig.cost) ? { ...modelConfig.cost } : modelConfig.cost,
+    } as ProviderModelConfig;
+  });
 }
 
 async function loadBuiltinCatalog(): Promise<BuiltinCatalog> {
@@ -120,20 +146,24 @@ export function registerRelayProviders(
 
   for (const [relayProviderId, relay] of Object.entries(providers)) {
     const sourceId = sourceProviderId(relayProviderId);
-    if (!sourceId || !relay.baseUrl) continue;
+    if (!sourceId) continue;
     if (!builtinProviderIds.has(sourceId)) {
       throw new Error(`Unknown source provider "${sourceId}" for "${relayProviderId}".`);
     }
 
+    const effectiveRelay = mergeConfig(providers[sourceId] ?? {}, relay) as RelayConfig;
+    if (!effectiveRelay.baseUrl) continue;
+
+    const { modelOverrides, models: _models, ...providerConfig } = effectiveRelay;
     pi.registerProvider(relayProviderId, {
-      name: relay.name ?? relayProviderId,
-      baseUrl: relay.baseUrl,
-      apiKey: relay.apiKey,
-      api: relay.api,
-      headers: relay.headers,
-      authHeader: relay.authHeader,
-      models: buildInheritedModels(catalog.models(sourceId), relay.api),
-    });
+      ...providerConfig,
+      name: effectiveRelay.name ?? relayProviderId,
+      models: buildInheritedModels(
+        catalog.models(sourceId),
+        effectiveRelay.api,
+        modelOverrides,
+      ),
+    } as ProviderConfig);
   }
 }
 

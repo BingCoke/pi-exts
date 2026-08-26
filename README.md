@@ -100,13 +100,18 @@ Example:
     "openai@primary": {
       "baseUrl": "https://openai-relay.example.com/v1",
       "apiKey": "$OPENAI_RELAY_KEY",
-      "api": "openai-completions"
+      "api": "openai-completions",
+      "modelOverrides": {
+        "gpt-4o": {
+          "contextWindow": 200000
+        }
+      }
     }
   }
 }
 ```
 
-The inherited model ids and names stay unchanged. Choose models with `/model source@relay/model-id`; run `/reload` after changing `models.json`.
+A relay starts with the source provider's configuration and model catalog; fields declared on the relay override the inherited values. Model-level overrides use `modelOverrides` and are merged by model id, so fields added by newer Pi versions continue to pass through. The inherited model ids and names stay unchanged. Choose models with `/model source@relay/model-id`; run `/reload` after changing `models.json`.
 
 ## Pi package install
 

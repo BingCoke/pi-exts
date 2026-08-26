@@ -66,6 +66,37 @@ describe("provider-relays", () => {
     });
   });
 
+  it("merges model overrides without dropping newer source fields", () => {
+    const sourceModels = [
+      {
+        id: "same-model",
+        name: "Same Model",
+        api: "openai-responses",
+        provider: "openai",
+        baseUrl: "https://api.openai.com/v1",
+        reasoning: false,
+        input: ["text"],
+        cost: { input: 1, output: 2, cacheRead: 3, cacheWrite: 4 },
+        contextWindow: 128000,
+        maxTokens: 16384,
+        futureConfig: { sourceValue: true },
+      },
+    ] as unknown as Parameters<typeof buildInheritedModels>[0];
+
+    expect(buildInheritedModels(sourceModels, undefined, {
+      "same-model": {
+        contextWindow: 256000,
+        cost: { output: 9 },
+        futureConfig: { relayValue: true },
+      },
+    })[0]).toMatchObject({
+      contextWindow: 256000,
+      maxTokens: 16384,
+      cost: { input: 1, output: 9, cacheRead: 3, cacheWrite: 4 },
+      futureConfig: { sourceValue: true, relayValue: true },
+    });
+  });
+
   it("registers identical model ids under different relay providers", () => {
     const registrations: Array<{ name: string; config: { models?: Array<{ id: string; name: string }> } }> = [];
 
@@ -77,7 +108,16 @@ describe("provider-relays", () => {
       },
       {
         providers: {
-          "openai@one": { baseUrl: "https://one.example/v1", apiKey: "$ONE_KEY" },
+          openai: {
+            api: "openai-completions",
+            modelOverrides: { "same-model": { contextWindow: 65536 } },
+          },
+          "openai@one": {
+            baseUrl: "https://one.example/v1",
+            apiKey: "$ONE_KEY",
+            api: "openai-responses",
+            modelOverrides: { "same-model": { maxTokens: 4096 } },
+          },
           "anthropic@two": { baseUrl: "https://two.example", apiKey: "$TWO_KEY" },
         },
       },
@@ -101,7 +141,13 @@ describe("provider-relays", () => {
     );
 
     expect(registrations.map(({ name }) => name)).toEqual(["openai@one", "anthropic@two"]);
-    expect(registrations[0]?.config.models?.[0]).toMatchObject({ id: "same-model", name: "Same Model" });
+    expect(registrations[0]?.config.models?.[0]).toMatchObject({
+      id: "same-model",
+      name: "Same Model",
+      api: "openai-responses",
+      contextWindow: 65536,
+      maxTokens: 4096,
+    });
     expect(registrations[1]?.config.models?.[0]).toMatchObject({ id: "same-model", name: "Same Model" });
   });
 });
