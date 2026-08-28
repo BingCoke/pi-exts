@@ -6,7 +6,7 @@ type BeforeAgentStartHandler = (event: {
 }) => Promise<{ systemPrompt: string }>;
 
 describe("coding-guardrails", () => {
-  it("injects root-cause and architecture approval rules", async () => {
+  it("injects root-cause, architecture, and superseded-work rules", async () => {
     let handler: BeforeAgentStartHandler | undefined;
     const pi = {
       on(event: string, registered: BeforeAgentStartHandler) {
@@ -27,5 +27,9 @@ describe("coding-guardrails", () => {
     expect(result.systemPrompt).toContain("stop and wait for the user's explicit approval");
     expect(result.systemPrompt).toContain("obtain explicit approval again");
     expect(result.systemPrompt).toContain("supersedes local workarounds");
+    expect(result.systemPrompt).toContain("treat the current requirements and supported contracts as the source of truth");
+    expect(result.systemPrompt).toContain("Artifacts created by the superseded work cannot justify their own retention");
+    expect(result.systemPrompt).toContain("make a residue pass the final plan and implementation step");
+    expect(result.systemPrompt).toContain("would still be created from today's requirements if the old approach were unknown");
   });
 });
