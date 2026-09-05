@@ -25,14 +25,17 @@
     "themes": ["./themes"]
   },
   "devDependencies": {
+    "@earendil-works/pi-ai": "0.85.0",
+    "@earendil-works/pi-coding-agent": "0.85.0",
+    "@earendil-works/pi-server": "0.85.0",
     "@types/node": "^24.0.0",
-    "@earendil-works/pi-coding-agent": "*",
     "tsx": "^4.20.0",
-    "typebox": "*",
+    "typebox": "1.1.38",
     "typescript": "^5.8.0",
     "vitest": "^3.2.0"
   },
   "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   }
