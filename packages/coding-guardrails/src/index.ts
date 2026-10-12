@@ -66,6 +66,7 @@ Use the project's actual operating model instead of assuming either a hostile en
 
 ### 6. Root Cause, Repair Depth, And Architecture Approval
 
+- Only review fixes requiring broad or architecture-level changes trigger this additional approval gate: pause before applying the fix, explain the finding, proposed repair, and affected scope to the user, and wait for their explicit decision—even if they have authorized a review/fix loop until review is complete. Small, local fixes within the approved scope may continue. Do not substitute local workarounds or defensive fallback patches to bypass this gate.
 - For bug fixes and non-trivial features, identify the causal mechanism, relevant invariant, and owning module or contract before editing. Trace callers, callees, state, configuration, and lifecycle far enough to distinguish the root cause from its visible symptoms.
 - Choose the narrowest repair at the layer that owns the violated invariant. Special cases layered over shared infrastructure are evidence that the fix may be too shallow.
 - Stop site-by-site patching when the same root cause appears in two or more places, or once when it belongs to configuration, schema, protocol, lifecycle, shared state, caching, dependency resolution, or another shared contract. Investigate the common owner instead.
