@@ -1,6 +1,6 @@
 # Pi Personal Tools
 
-A personal Pi package with five extensions.
+A personal Pi package with five extensions. Image generation uses Pi's built-in tools.
 
 ## Extensions
 
@@ -11,50 +11,6 @@ A personal Pi package with five extensions.
 ```
 
 Opens the last `n` assistant messages in an external editor. Text below `----` is inserted back into the Pi editor.
-
-### image-tool
-
-Registers the `generate_image` tool. It calls an OpenAI-compatible image API.
-
-Settings:
-
-```json
-{
-  "@bingcoke/ext": {
-    "imageTool": {
-      "baseUrl": "https://api.openai.com/v1",
-      "apiKeyEnv": "OPENAI_API_KEY",
-      "model": "gpt-image-1",
-      "taskPollPath": "/tasks/{task_id}",
-      "taskInitialDelayMs": 5000,
-      "taskPollIntervalMs": 3000,
-      "taskTimeoutMs": 180000
-    }
-  }
-}
-```
-
-Environment overrides:
-
-```bash
-PI_IMAGE_API_BASE_URL=https://api.openai.com/v1
-PI_IMAGE_API_KEY=sk-...
-PI_IMAGE_MODEL=gpt-image-1
-PI_IMAGE_TASK_POLL_PATH=/tasks/{task_id}
-PI_IMAGE_TASK_INITIAL_DELAY_MS=5000
-PI_IMAGE_TASK_POLL_INTERVAL_MS=3000
-PI_IMAGE_TASK_TIMEOUT_MS=180000
-```
-
-The `generate_image` tool requires `size` and `output` values chosen by the agent. Relative output paths are resolved from the current project, parent directories are created automatically, and `output` must be an image file path such as `.pi/generated-images/cat.png`.
-
-Standard OpenAI image responses are handled directly from `data[].b64_json` or `data[].url`. OpenAI-compatible providers that return an async `task_id` are also supported: the tool first uses a returned `poll_url` if present, otherwise it polls `taskPollPath` relative to `baseUrl`. The default `/tasks/{task_id}` works for providers such as Apimart.
-
-Example tool input:
-
-```json
-{ "prompt": "a watercolor cat", "size": "1024x1024", "output": ".pi/generated-images/cat.png" }
-```
 
 ### processor
 
@@ -112,6 +68,43 @@ Example:
 ```
 
 A relay starts with the source provider's configuration and model catalog; fields declared on the relay override the inherited values. Model-level overrides use `modelOverrides` and are merged by model id, so fields added by newer Pi versions continue to pass through. The inherited model ids and names stay unchanged. Choose models with `/model source@relay/model-id`; run `/reload` after changing `models.json`.
+
+### mcp-adapter
+
+An MCP adapter for Pi 1.5.0, with explicit resource subscriptions. It registers `/mcp`, so Pi loads it in place of built-in MCP for the session. Tool calls, resource reads, and subscriptions use one `McpClient` per server. It uses the official Pi MCP client's stdio and streamable HTTP transports, including SSE resumption.
+
+The adapter reads `~/.pi/agent/mcp.json` and trusted projects' `.pi/mcp.json`. Project overrides can change `enabled`, `exposure`, and `toolExposure`; extension server registrations are also supported. Tools retain the `mcp__<server>__<tool>` naming and `direct`, `codemode`, `deferred`, and `hidden` exposures. The resource tools are declared directly. Startup waits for the configured servers to finish connecting or fail within their request timeouts.
+
+Resource tools:
+
+```txt
+list_mcp_resources({ server?, cursor? })
+list_mcp_resource_templates({ server?, cursor? })
+read_mcp_resource({ server, uri })
+subscribe_mcp_resource({ server, uri })
+unsubscribe_mcp_resource({ server, uri })
+```
+
+A URI returned by a tool or instantiated from a resource template can be used directly, even if `resources/list` is empty. To follow a run:
+
+1. Explicitly subscribe to the returned URI.
+2. Read it once immediately to obtain its current state, including an already completed result.
+3. When `mcp-resource-update` arrives, explicitly read again. An update only means the URI changed; it does not establish success.
+4. Explicitly unsubscribe when follow-up is complete. Cancellation releases observation and keeps the shared connection open.
+
+Notifications are custom messages. They trigger an agent run when idle and queue a follow-up when busy. Tool results and notifications include an opaque `generation` identifying their logical MCP connection. A lost session emits `subscriptions_lost` with the affected URIs. A later request may establish a new session, but business requests and subscriptions are not automatically replayed. Ordinary SSE resumption remains the MCP transport's responsibility. Reload and session shutdown close the connections and discard subscriptions.
+
+`/mcp` shows status. `/mcp reconnect <server>` explicitly replaces its session. `/mcp login <server>` displays an OAuth authorization URL to open in a browser; `/mcp logout <server>` clears that server's adapter credentials. OAuth credentials are stored separately under `~/.pi/agent/mcp-adapter-auth/`, keyed by server name and URL, so sign in again when switching from built-in MCP. Configured bearer headers and provider authentication (`auth.provider`) are supported. The command provides text status and authentication, rather than the built-in interactive configuration manager; edit `mcp.json` and run `/reload` for configuration changes.
+
+Load just this extension for one invocation:
+
+```bash
+pi -e ./packages/mcp-adapter/src/index.ts
+```
+
+The root package manifest also includes it. Disable this extension in `pi config` and reload to restore built-in MCP. Loading the source above does not modify the Pi installation or global settings.
+
+Verification uses real HTTP and stdio MCP fixtures and Pi SDK sessions with the local faux model provider. Actual Wings/Core subscription acceptance remains pending Wings 07-A.
 
 ## Pi package install
 
