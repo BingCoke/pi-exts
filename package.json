@@ -18,8 +18,7 @@
       "./packages/last-ai/src/index.ts",
       "./packages/processor/src/index.ts",
       "./packages/coding-guardrails/src/index.ts",
-      "./packages/provider-relays/src/index.ts",
-      "./packages/mcp-adapter/src/index.ts"
+      "./packages/provider-relays/src/index.ts"
     ],
     "skills": ["./skills"],
     "themes": ["./themes"]
